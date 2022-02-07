@@ -2,45 +2,69 @@
 const BOARD_SIZE: usize = 81;
 
 // enums
-enum InvalidPlaceErr {
+enum BoardErr {
     PosInvalid, // breaks rules
-    PosTaken // already a piece
+    PosTaken, // already a piece
+    NoPiece, // no piece to remove
+    OutOfBounds, // bounds violated
+}
+
+enum State {
+    Win,
+    NoWin,
 }
 
 // types
 type Pos = (usize, usize);
+type PlaceResult = Result<State, BoardErr>;
+type CheckResult = Result<(), BoardErr>;
 
 pub struct Board {
-    board: [Option<u8>; BOARD_SIZE]
+    board: [Option<u8>; BOARD_SIZE],
+    piece_count: u8,
 }
 
 impl Board {
     pub fn new() -> Self {
         Self {
-            board: [None; BOARD_SIZE]
+            board: [None; BOARD_SIZE],
+            piece_count: 0,
         }
     }
 
     pub fn from_array(board: [Option<u8>; BOARD_SIZE]) -> Self {
         Self {
-            board
+            board,
+            piece_count: board.iter().filter(|p| {
+                **p != None
+            }).count() as u8,
         }
     }
 
-    pub fn place_piece(&mut self, piece: u8, pos: Pos) -> Result<(), InvalidPlaceErr> {
-        if let Some(p) = self.board[pos.0 + pos.1 * 9] {
-            return Err(InvalidPlaceErr::PosTaken);
-        } else {
-            // code to check if placement valid
-            self.check_placement(piece, pos)?;
+    pub fn place_piece(&mut self, piece: u8, pos: Pos) -> PlaceResult {
+        // check if bounds are satified
+        if pos.0 > 8 || pos.1 > 0 { // since pos must be of type (usize, usize) no need to check if < 0
+            return Err(BoardErr::OutOfBounds);
         }
+
+        // check if piece alreay existss
+        if let Some(p) = self.board[pos.0 + pos.1 * 9] {
+            return Err(BoardErr::PosTaken);
+        }
+        // code to check if placement valid
+        self.check_placement(piece, pos)?;
 
         self.board[pos.0 + pos.1 * 9] = Some(piece);
+        self.piece_count += 1;
 
-        Ok(())
+        if self.piece_count as usize == BOARD_SIZE {
+            return Ok(State::Win);
+        }
+
+        Ok(State::NoWin)
     }
 
-    fn check_placement(&self, piece: u8, pos: Pos) -> Result<(), InvalidPlaceErr> { // returns InvalidPlaceErr::PosInvalid
+    fn check_placement(&self, piece: u8, pos: Pos) -> CheckResult { // returns InvalidPlaceErr::PosInvalid
         // same grid cell
         let grid: [i8; 8] = [-1, 1, -8, 8, -9, 9, -10, 10];
         for g in grid {
@@ -48,7 +72,7 @@ impl Board {
             if cell >= 0 && cell < 81 {
                 if let Some(p) = self.board[cell as usize] {
                     if p == piece {
-                        return Err(InvalidPlaceErr::PosInvalid);
+                        return Err(BoardErr::PosInvalid);
                     }
                 }
             }
@@ -59,20 +83,33 @@ impl Board {
             if i != pos.0 {
                 if let Some(p) = self.board[i + pos.1*9] {
                     if p == piece {
-                        return Err(InvalidPlaceErr::PosInvalid);
+                        return Err(BoardErr::PosInvalid);
                     }
                 }
             }
             if i != pos.1 {
                 if let Some(p) = self.board[pos.0 + i*9] {
                     if p == piece {
-                        return Err(InvalidPlaceErr::PosInvalid);
+                        return Err(BoardErr::PosInvalid);
                     }
                 }
             }
         }
 
         Ok(())
+    }
+
+    pub fn remove_piece(&mut self, pos: Pos) -> CheckResult {
+        // check if bounds are satified
+        if pos.0 > 8 || pos.1 > 0 { // since pos must be of type (usize, usize) no need to check if < 0
+            return Err(BoardErr::OutOfBounds);
+        }
+
+        // take because if no piece then it leaves none otherweise remove piece
+        match self.board[pos.0 + pos.1 * 9].take() {
+            Some(_) => Ok(()),
+            None => Err(BoardErr::NoPiece),
+        }
     }
 }
 
@@ -90,7 +127,7 @@ impl std::fmt::Display for Board {
             if let Some(p) = piece {
                 pretty_board.push_str(&p.to_string());
             } else {
-                pretty_board.push(' ');
+                pretty_board.push('0');
             }
 
             pos += 1;
@@ -115,9 +152,9 @@ mod tests {
 
     #[test]
     fn board_print_test() {
-        let x = [-7];
-        for i in x {
-            println!("{}", i as usize);
-        }
+        let mut board = Board::new();
+        board.place_piece(1, (1, 0));
+        board.place_piece(1, (2, 0));
+        println!("{}", board);
     }
 }
