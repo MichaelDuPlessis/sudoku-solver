@@ -2,6 +2,7 @@
 const BOARD_SIZE: usize = 81;
 
 // enums
+#[derive(Debug, PartialEq, Eq)]
 enum BoardErr {
     PosInvalid, // breaks rules
     PosTaken, // already a piece
@@ -9,6 +10,7 @@ enum BoardErr {
     OutOfBounds, // bounds violated
 }
 
+#[derive(Debug, PartialEq, Eq)]
 enum State {
     Win,
     NoWin,
@@ -32,10 +34,11 @@ impl Board {
         }
     }
 
+    // add code to check if board is valid
     pub fn from_array(board: [Option<u8>; BOARD_SIZE]) -> Self {
         Self {
             board,
-            piece_count: board.iter().filter(|p| {
+            piece_count: board.iter().filter(|p| { // create new data structure where None's are filtered out and count it
                 **p != None
             }).count() as u8,
         }
@@ -43,7 +46,7 @@ impl Board {
 
     pub fn place_piece(&mut self, piece: u8, pos: Pos) -> PlaceResult {
         // check if bounds are satified
-        if pos.0 > 8 || pos.1 > 0 { // since pos must be of type (usize, usize) no need to check if < 0
+        if pos.0 > 8 || pos.1 > 8 { // since pos must be of type (usize, usize) no need to check if < 0
             return Err(BoardErr::OutOfBounds);
         }
 
@@ -101,7 +104,7 @@ impl Board {
 
     pub fn remove_piece(&mut self, pos: Pos) -> CheckResult {
         // check if bounds are satified
-        if pos.0 > 8 || pos.1 > 0 { // since pos must be of type (usize, usize) no need to check if < 0
+        if pos.0 > 8 || pos.1 > 8 { // since pos must be of type (usize, usize) no need to check if < 0
             return Err(BoardErr::OutOfBounds);
         }
 
@@ -151,10 +154,36 @@ mod tests {
     use super::*;
 
     #[test]
-    fn board_print_test() {
+    fn valid_place_test() {
+        assert_eq!(Board::new().place_piece(7, (0, 7)), Ok(State::NoWin));
+
+        // add code to test for win
+    }
+
+    #[test]
+    fn invalid_place_test() {
         let mut board = Board::new();
-        board.place_piece(1, (1, 0));
-        board.place_piece(1, (2, 0));
-        println!("{}", board);
+        board.place_piece(1, (0, 7));
+        assert_eq!(board.place_piece(7, (0, 7)), Err(BoardErr::PosTaken));
+
+        let mut board = Board::new();
+        board.place_piece(7, (0, 0));
+        assert_eq!(board.place_piece(7, (0, 7)), Err(BoardErr::PosInvalid));
+
+        assert_eq!(Board::new().place_piece(7, (0, 20)), Err(BoardErr::OutOfBounds));
+    }
+
+    #[test]
+    fn valid_remove_test() {
+        let mut board = Board::new();
+        board.place_piece(1, (0, 7));
+        assert_eq!(board.remove_piece((0,7)), Ok(()))
+    }
+
+    #[test]
+    fn invalid_remove_test() {
+        let mut board = Board::new();
+        board.place_piece(1, (0, 7));
+        assert_eq!(board.remove_piece((0,6)), Err(BoardErr::NoPiece));
     }
 }
