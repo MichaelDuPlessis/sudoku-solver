@@ -8,6 +8,7 @@ enum BoardErr {
     PosTaken, // already a piece
     NoPiece, // no piece to remove
     OutOfBounds, // bounds violated
+    InvalidPiece, // if piece is invalid
 }
 
 #[derive(Debug, PartialEq, Eq)]
@@ -23,6 +24,7 @@ type CheckResult = Result<(), BoardErr>;
 
 pub struct Board {
     board: [Option<u8>; BOARD_SIZE],
+    grid: [bool; BOARD_SIZE],
     piece_count: u8,
 }
 
@@ -30,14 +32,17 @@ impl Board {
     pub fn new() -> Self {
         Self {
             board: [None; BOARD_SIZE],
+            grid: [false; BOARD_SIZE],
             piece_count: 0,
         }
     }
 
     // add code to check if board is valid
-    pub fn from_array(board: [Option<u8>; BOARD_SIZE]) -> Self {
+    // make it so gird does not need to be past in
+    pub fn from_array(board: [Option<u8>; BOARD_SIZE], grid: [bool; BOARD_SIZE]) -> Self {
         Self {
             board,
+            grid,
             piece_count: board.iter().filter(|p| { // create new data structure where None's are filtered out and count it
                 **p != None
             }).count() as u8,
@@ -49,6 +54,9 @@ impl Board {
         if pos.0 > 8 || pos.1 > 8 { // since pos must be of type (usize, usize) no need to check if < 0
             return Err(BoardErr::OutOfBounds);
         }
+        if piece == 0 || piece > 9 {
+            return Err(BoardErr::InvalidPiece);
+        }
 
         // check if piece alreay existss
         if let Some(p) = self.board[pos.0 + pos.1 * 9] {
@@ -59,6 +67,7 @@ impl Board {
 
         self.board[pos.0 + pos.1 * 9] = Some(piece);
         self.piece_count += 1;
+        self.grid[pos.0/3 + pos.1/3 * 3 + piece as usize] = true;
 
         if self.piece_count as usize == BOARD_SIZE {
             return Ok(State::Win);
@@ -69,16 +78,8 @@ impl Board {
 
     fn check_placement(&self, piece: u8, pos: Pos) -> CheckResult { // returns InvalidPlaceErr::PosInvalid
         // same grid cell
-        let grid: [i8; 8] = [-1, 1, -8, 8, -9, 9, -10, 10];
-        for g in grid {
-            let cell = (pos.0 as i8) + (pos.1 as i8)*9 + g;
-            if cell >= 0 && cell < 81 {
-                if let Some(p) = self.board[cell as usize] {
-                    if p == piece {
-                        return Err(BoardErr::PosInvalid);
-                    }
-                }
-            }
+        if self.grid[pos.0/3 + pos.1/3 * 3 + piece as usize] {
+            return Err(BoardErr::PosInvalid);
         }
 
         // checking row and col
@@ -110,7 +111,10 @@ impl Board {
 
         // take because if no piece then it leaves none otherweise remove piece
         match self.board[pos.0 + pos.1 * 9].take() {
-            Some(_) => Ok(()),
+            Some(p) =>  {
+                self.grid[pos.0/3 + pos.1/3 * 3 + p as usize] = false;
+                Ok(())
+            },
             None => Err(BoardErr::NoPiece),
         }
     }
@@ -149,6 +153,7 @@ impl std::fmt::Display for Board {
     }
 }
 
+// unwrap is used because I know that there will always be an Ok()
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -163,27 +168,29 @@ mod tests {
     #[test]
     fn invalid_place_test() {
         let mut board = Board::new();
-        board.place_piece(1, (0, 7));
+        board.place_piece(1, (0, 7)).unwrap();
         assert_eq!(board.place_piece(7, (0, 7)), Err(BoardErr::PosTaken));
 
         let mut board = Board::new();
-        board.place_piece(7, (0, 0));
+        board.place_piece(7, (0, 0)).unwrap();
         assert_eq!(board.place_piece(7, (0, 7)), Err(BoardErr::PosInvalid));
 
         assert_eq!(Board::new().place_piece(7, (0, 20)), Err(BoardErr::OutOfBounds));
+
+        assert_eq!(Board::new().place_piece(20, (0, 0)), Err(BoardErr::InvalidPiece));
     }
 
     #[test]
     fn valid_remove_test() {
         let mut board = Board::new();
-        board.place_piece(1, (0, 7));
+        board.place_piece(1, (0, 7)).unwrap();
         assert_eq!(board.remove_piece((0,7)), Ok(()))
     }
 
     #[test]
     fn invalid_remove_test() {
         let mut board = Board::new();
-        board.place_piece(1, (0, 7));
+        board.place_piece(1, (0, 7)).unwrap();
         assert_eq!(board.remove_piece((0,6)), Err(BoardErr::NoPiece));
     }
 }
