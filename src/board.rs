@@ -41,6 +41,36 @@ impl Board {
     }
 
     fn check_placement(&self, piece: u8, pos: Pos) -> Result<(), InvalidPlaceErr> { // returns InvalidPlaceErr::PosInvalid
+        // same grid cell
+        let grid: [i8; 8] = [-1, 1, -8, 8, -9, 9, -10, 10];
+        for g in grid {
+            let cell = (pos.0 as i8) + (pos.1 as i8)*9 + g;
+            if cell >= 0 && cell < 81 {
+                if let Some(p) = self.board[cell as usize] {
+                    if p == piece {
+                        return Err(InvalidPlaceErr::PosInvalid);
+                    }
+                }
+            }
+        }
+
+        // checking row and col
+        for i in 0..9 {
+            if i != pos.0 {
+                if let Some(p) = self.board[i + pos.1*9] {
+                    if p == piece {
+                        return Err(InvalidPlaceErr::PosInvalid);
+                    }
+                }
+            }
+            if i != pos.1 {
+                if let Some(p) = self.board[pos.0 + i*9] {
+                    if p == piece {
+                        return Err(InvalidPlaceErr::PosInvalid);
+                    }
+                }
+            }
+        }
 
         Ok(())
     }
@@ -85,7 +115,9 @@ mod tests {
 
     #[test]
     fn board_print_test() {
-        let board = Board::from_array([Some(0); 81]);
-        println!("{}", board);
+        let x = [-7];
+        for i in x {
+            println!("{}", i as usize);
+        }
     }
 }
