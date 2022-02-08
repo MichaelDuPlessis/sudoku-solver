@@ -39,7 +39,24 @@ impl Board {
 
     // add code to check if board is valid
     // make it so gird does not need to be past in
-    pub fn from_array(board: [Option<u8>; BOARD_SIZE], grid: [bool; BOARD_SIZE]) -> Self {
+    pub fn from_array(board: [Option<u8>; BOARD_SIZE]) -> Self {
+        let mut grid = [false; BOARD_SIZE];
+
+        // change code to be more effiecient with modulus
+        let mut x = 0;
+        let mut y = 0;
+        for piece in board {
+            if let Some(p) = piece {
+                grid[x/3 + (y/3)*3 + (p as usize) - 1] = true;
+            }
+
+            x += 1;
+            if x == 9 {
+                x = 0;
+                y += 1;
+            }
+        }
+
         Self {
             board,
             grid,
@@ -113,6 +130,7 @@ impl Board {
         match self.board[pos.0 + pos.1 * 9].take() {
             Some(p) =>  {
                 self.grid[pos.0/3 + pos.1/3 * 3 + p as usize] = false;
+                self.piece_count -= 1;
                 Ok(())
             },
             None => Err(BoardErr::NoPiece),
