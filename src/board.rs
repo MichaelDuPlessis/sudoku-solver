@@ -67,7 +67,27 @@ impl Board {
     }
 
     pub fn from_string(board: &str) -> Self {
-        todo!()
+        let mut b = [None; BOARD_SIZE];
+
+        let mut i = 0;
+        for p in board.as_bytes() {
+            match p {
+              b'1' => b[i] = Some(1),
+              b'2' => b[i] = Some(2),
+              b'3' => b[i] = Some(3),
+              b'4' => b[i] = Some(4),
+              b'5' => b[i] = Some(5),
+              b'6' => b[i] = Some(6),
+              b'7' => b[i] = Some(7),
+              b'8' => b[i] = Some(8),
+              b'9' => b[i] = Some(9),
+              _ => (),
+            };
+
+            i += 1;
+        }
+
+        Self::from_array(b)
     }
 
     pub fn place_piece(&mut self, piece: u8, pos: Pos) -> PlaceResult {
