@@ -3,7 +3,7 @@ const BOARD_SIZE: usize = 81;
 
 // enums
 #[derive(Debug, PartialEq, Eq)]
-enum BoardErr {
+pub enum BoardErr {
     PosInvalid, // breaks rules
     PosTaken, // already a piece
     NoPiece, // no piece to remove
@@ -12,13 +12,13 @@ enum BoardErr {
 }
 
 #[derive(Debug, PartialEq, Eq)]
-enum State {
+pub enum State {
     Win,
     NoWin,
 }
 
 // types
-type Pos = (usize, usize);
+pub type Pos = (usize, usize);
 type PlaceResult = Result<State, BoardErr>;
 type CheckResult = Result<(), BoardErr>;
 
@@ -47,7 +47,7 @@ impl Board {
         let mut y = 0;
         for piece in board {
             if let Some(p) = piece {
-                grid[x/3 + y/3 * 3 + (p as usize) - 1] = true;
+                grid[(x/3 + y/3 * 3) * 9 + (p as usize) - 1] = true;
             }
 
             x += 1;
@@ -80,7 +80,7 @@ impl Board {
         }
 
         // check if piece alreay existss
-        if let Some(p) = self.board[pos.0 + pos.1 * 9] {
+        if let Some(_) = self.board[pos.0 + pos.1 * 9] {
             return Err(BoardErr::PosTaken);
         }
         // code to check if placement valid
@@ -88,7 +88,7 @@ impl Board {
 
         self.board[pos.0 + pos.1 * 9] = Some(piece);
         self.piece_count += 1;
-        self.grid[pos.0/3 + pos.1/3 * 3 + (piece - 1) as usize] = true;
+        self.grid[(pos.0/3 + pos.1/3 * 3) * 9 + (piece - 1) as usize] = true;
 
         if self.piece_count as usize == BOARD_SIZE {
             return Ok(State::Win);
@@ -99,7 +99,8 @@ impl Board {
 
     fn check_placement(&self, piece: u8, pos: Pos) -> CheckResult { // returns InvalidPlaceErr::PosInvalid
         // same grid cell
-        if self.grid[pos.0/3 + pos.1/3 * 3 + (piece - 1) as usize] {
+        if self.grid[(pos.0/3 + pos.1/3 * 3) * 9 + (piece - 1) as usize] {
+            // println!("got here {},{}", pos.0, pos.1);
             return Err(BoardErr::PosInvalid);
         }
 
@@ -133,12 +134,21 @@ impl Board {
         // take because if no piece then it leaves none otherweise remove piece
         match self.board[pos.0 + pos.1 * 9].take() {
             Some(p) =>  {
-                self.grid[pos.0/3 + pos.1/3 * 3 + (p - 1) as usize] = false;
+                self.grid[(pos.0/3 + pos.1/3 * 3) * 9 + (p - 1) as usize] = false;
                 self.piece_count -= 1;
                 Ok(())
             },
             None => Err(BoardErr::NoPiece),
         }
+    }
+
+    pub fn is_piece(&self, pos: Pos) -> bool {
+        // remember error checking
+        if self.board[pos.0 + pos.1 * 9] == None {
+            return false;
+        }
+
+        true
     }
 }
 
@@ -228,6 +238,6 @@ mod tests {
         board.place_piece(7, (2, 2)).unwrap();
         board.place_piece(8, (1, 2)).unwrap();
         assert_eq!(board.place_piece(9, (2, 1)), Ok(State::NoWin));
-        // println!("{:?}", board.grid);
+        println!("{:?}", board.grid);
     }
 }
