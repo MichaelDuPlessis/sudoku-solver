@@ -220,13 +220,14 @@ mod tests {
     fn check_grid() {
         let mut board = Board::new();
         board.place_piece(1, (0, 0)).unwrap();
-        board.place_piece(2, (0, 1)).unwrap();
-        board.place_piece(3, (0, 2)).unwrap();
-        board.place_piece(4, (1, 3)).unwrap();
-        board.place_piece(5, (1, 4)).unwrap();
-        board.place_piece(6, (1, 5)).unwrap();
-        board.place_piece(7, (2, 6)).unwrap();
-        board.place_piece(8, (2, 7)).unwrap();
-        assert_eq!(board.place_piece(9, (2, 8)), Ok(State::NoWin));
+        board.place_piece(2, (1, 0)).unwrap();
+        board.place_piece(3, (2, 0)).unwrap();
+        board.place_piece(4, (0, 1)).unwrap();
+        board.place_piece(5, (0, 2)).unwrap();
+        board.place_piece(6, (1, 1)).unwrap();
+        board.place_piece(7, (2, 2)).unwrap();
+        board.place_piece(8, (1, 2)).unwrap();
+        assert_eq!(board.place_piece(9, (2, 1)), Ok(State::NoWin));
+        // println!("{:?}", board.grid);
     }
 }
