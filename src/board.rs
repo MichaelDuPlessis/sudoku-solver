@@ -41,13 +41,19 @@ impl PartialEq<u8> for Piece {
     }
 }
 
-// impl FromIterator<Option<Piece>> for [Option<Piece>; 81] {
-//     fn from_iter<T: IntoIterator<Item = Option<Piece>>>(iter: T) -> Self {
-//         let mut collection: [Option<Piece>] = [None; 81];
-//     }
-// }
+struct GameBoard([Option<Piece>; BOARD_SIZE]); // must have wrapping because of rusts rules
 
-struct GameBoard([Option<Piece>; BOARD_SIZE]);
+impl FromIterator<Option<Piece>> for GameBoard {
+    fn from_iter<T: IntoIterator<Item = Option<Piece>>>(iter: T) -> Self {
+        let mut game_board = GameBoard::new();
+
+        for (i, p) in iter.into_iter().enumerate() {
+            game_board.get_board_mut()[i] = p;
+        }
+
+        game_board
+    }
+}
 
 impl GameBoard {
     fn new() -> Self {
@@ -80,30 +86,30 @@ impl Board {
 
     // add code to check if board is valid
     // make it so gird does not need to be past in
-    // pub fn from_array(board: [Option<u8>; BOARD_SIZE]) -> Self {
-    //     let mut grid = [false; BOARD_SIZE];
-    //     for (i, b) in board.into_iter().enumerate() {
-    //         if let Some(p) = b {
-    //             let y = i/9;
-    //             let x = i - y*9;
-    //             grid[x/3 + y/3 * 3 + p as usize] = true;
-    //         }
-    //     }
+    pub fn from_array(board: [Option<u8>; BOARD_SIZE]) -> Self {
+        let mut grid = [false; BOARD_SIZE];
+        for (i, b) in board.into_iter().enumerate() {
+            if let Some(p) = b {
+                let y = i/9;
+                let x = i - y*9;
+                grid[x/3 + y/3 * 3 + p as usize] = true;
+            }
+        }
 
-    //     Self {
-    //         board: board.into_iter().map(|piece| {
-    //             if let Some(p) = piece {
-    //                 return Some(Piece::new(p, false));
-    //             }
+        Self {
+            board: board.into_iter().map(|piece| {
+                if let Some(p) = piece {
+                    return Some(Piece::new(p, false));
+                }
 
-    //             None
-    //         }).collect::<[Option<Piece>; 81]>(),
-    //         grid,
-    //         piece_count: board.iter().filter(|p| { // create new data structure where None's are filtered out and count it
-    //             **p != None
-    //         }).count() as u8,
-    //     }
-    // }
+                None
+            }).collect::<GameBoard>(),
+            grid,
+            piece_count: board.iter().filter(|p| { // create new data structure where None's are filtered out and count it
+                **p != None
+            }).count() as u8,
+        }
+    }
 
     pub fn place_piece(&mut self, piece: u8, pos: Pos) -> PlaceResult {
         // check if bounds are satified
