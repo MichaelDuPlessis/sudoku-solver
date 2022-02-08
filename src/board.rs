@@ -47,7 +47,7 @@ impl Board {
         let mut y = 0;
         for piece in board {
             if let Some(p) = piece {
-                grid[x/3 + (y/3)*3 + (p as usize) - 1] = true;
+                grid[x/3 + y/3 * 3 + (p as usize) - 1] = true;
             }
 
             x += 1;
@@ -64,6 +64,10 @@ impl Board {
                 **p != None
             }).count() as u8,
         }
+    }
+
+    pub fn from_string(board: &str) -> Self {
+        todo!()
     }
 
     pub fn place_piece(&mut self, piece: u8, pos: Pos) -> PlaceResult {
@@ -84,7 +88,7 @@ impl Board {
 
         self.board[pos.0 + pos.1 * 9] = Some(piece);
         self.piece_count += 1;
-        self.grid[pos.0/3 + pos.1/3 * 3 + piece as usize] = true;
+        self.grid[pos.0/3 + pos.1/3 * 3 + (piece - 1) as usize] = true;
 
         if self.piece_count as usize == BOARD_SIZE {
             return Ok(State::Win);
@@ -95,7 +99,7 @@ impl Board {
 
     fn check_placement(&self, piece: u8, pos: Pos) -> CheckResult { // returns InvalidPlaceErr::PosInvalid
         // same grid cell
-        if self.grid[pos.0/3 + pos.1/3 * 3 + piece as usize] {
+        if self.grid[pos.0/3 + pos.1/3 * 3 + (piece - 1) as usize] {
             return Err(BoardErr::PosInvalid);
         }
 
@@ -129,7 +133,7 @@ impl Board {
         // take because if no piece then it leaves none otherweise remove piece
         match self.board[pos.0 + pos.1 * 9].take() {
             Some(p) =>  {
-                self.grid[pos.0/3 + pos.1/3 * 3 + p as usize] = false;
+                self.grid[pos.0/3 + pos.1/3 * 3 + (p - 1) as usize] = false;
                 self.piece_count -= 1;
                 Ok(())
             },
@@ -210,5 +214,19 @@ mod tests {
         let mut board = Board::new();
         board.place_piece(1, (0, 7)).unwrap();
         assert_eq!(board.remove_piece((0,6)), Err(BoardErr::NoPiece));
+    }
+
+    #[test]
+    fn check_grid() {
+        let mut board = Board::new();
+        board.place_piece(1, (0, 0)).unwrap();
+        board.place_piece(2, (0, 1)).unwrap();
+        board.place_piece(3, (0, 2)).unwrap();
+        board.place_piece(4, (1, 3)).unwrap();
+        board.place_piece(5, (1, 4)).unwrap();
+        board.place_piece(6, (1, 5)).unwrap();
+        board.place_piece(7, (2, 6)).unwrap();
+        board.place_piece(8, (2, 7)).unwrap();
+        assert_eq!(board.place_piece(9, (2, 8)), Ok(State::NoWin));
     }
 }
