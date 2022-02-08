@@ -22,8 +22,49 @@ type Pos = (usize, usize);
 type PlaceResult = Result<State, BoardErr>;
 type CheckResult = Result<(), BoardErr>;
 
+// structs
+#[derive(Clone, Copy)]
+struct Piece { // enum caused more issues than it was worth as patternt matching was always required
+    value: u8,
+    player_piece: bool,
+}
+
+impl Piece {
+    fn new(value: u8, player_piece: bool) -> Self {
+        Piece { value, player_piece }
+    }
+}
+
+impl PartialEq<u8> for Piece {
+    fn eq(&self, other: &u8) -> bool {
+        self.value == *other
+    }
+}
+
+// impl FromIterator<Option<Piece>> for [Option<Piece>; 81] {
+//     fn from_iter<T: IntoIterator<Item = Option<Piece>>>(iter: T) -> Self {
+//         let mut collection: [Option<Piece>] = [None; 81];
+//     }
+// }
+
+struct GameBoard([Option<Piece>; BOARD_SIZE]);
+
+impl GameBoard {
+    fn new() -> Self {
+        Self([None; 81])
+    }
+
+    fn get_board_mut(&mut self) -> &mut [Option<Piece>; BOARD_SIZE] {
+        &mut self.0
+    }
+
+    fn get_board(&self) -> &[Option<Piece>; BOARD_SIZE] {
+        &self.0
+    }
+}
+
 pub struct Board {
-    board: [Option<u8>; BOARD_SIZE],
+    board: GameBoard,
     grid: [bool; BOARD_SIZE],
     piece_count: u8,
 }
@@ -31,7 +72,7 @@ pub struct Board {
 impl Board {
     pub fn new() -> Self {
         Self {
-            board: [None; BOARD_SIZE],
+            board: GameBoard::new(),
             grid: [false; BOARD_SIZE],
             piece_count: 0,
         }
@@ -39,15 +80,30 @@ impl Board {
 
     // add code to check if board is valid
     // make it so gird does not need to be past in
-    pub fn from_array(board: [Option<u8>; BOARD_SIZE], grid: [bool; BOARD_SIZE]) -> Self {
-        Self {
-            board,
-            grid,
-            piece_count: board.iter().filter(|p| { // create new data structure where None's are filtered out and count it
-                **p != None
-            }).count() as u8,
-        }
-    }
+    // pub fn from_array(board: [Option<u8>; BOARD_SIZE]) -> Self {
+    //     let mut grid = [false; BOARD_SIZE];
+    //     for (i, b) in board.into_iter().enumerate() {
+    //         if let Some(p) = b {
+    //             let y = i/9;
+    //             let x = i - y*9;
+    //             grid[x/3 + y/3 * 3 + p as usize] = true;
+    //         }
+    //     }
+
+    //     Self {
+    //         board: board.into_iter().map(|piece| {
+    //             if let Some(p) = piece {
+    //                 return Some(Piece::new(p, false));
+    //             }
+
+    //             None
+    //         }).collect::<[Option<Piece>; 81]>(),
+    //         grid,
+    //         piece_count: board.iter().filter(|p| { // create new data structure where None's are filtered out and count it
+    //             **p != None
+    //         }).count() as u8,
+    //     }
+    // }
 
     pub fn place_piece(&mut self, piece: u8, pos: Pos) -> PlaceResult {
         // check if bounds are satified
@@ -59,13 +115,13 @@ impl Board {
         }
 
         // check if piece alreay existss
-        if let Some(p) = self.board[pos.0 + pos.1 * 9] {
+        if let Some(p) = self.board.get_board()[pos.0 + pos.1 * 9] {
             return Err(BoardErr::PosTaken);
         }
         // code to check if placement valid
         self.check_placement(piece, pos)?;
 
-        self.board[pos.0 + pos.1 * 9] = Some(piece);
+        self.board.get_board_mut()[pos.0 + pos.1 * 9] = Some(Piece::new(piece, true));
         self.piece_count += 1;
         self.grid[pos.0/3 + pos.1/3 * 3 + piece as usize] = true;
 
@@ -76,7 +132,7 @@ impl Board {
         Ok(State::NoWin)
     }
 
-    fn check_placement(&self, piece: u8, pos: Pos) -> CheckResult { // returns InvalidPlaceErr::PosInvalid
+    fn check_placement(&mut self, piece: u8, pos: Pos) -> CheckResult { // returns InvalidPlaceErr::PosInvalid
         // same grid cell
         if self.grid[pos.0/3 + pos.1/3 * 3 + piece as usize] {
             return Err(BoardErr::PosInvalid);
@@ -85,14 +141,14 @@ impl Board {
         // checking row and col
         for i in 0..9 {
             if i != pos.0 {
-                if let Some(p) = self.board[i + pos.1*9] {
+                if let Some(p) = self.board.get_board()[i + pos.1*9] {
                     if p == piece {
                         return Err(BoardErr::PosInvalid);
                     }
                 }
             }
             if i != pos.1 {
-                if let Some(p) = self.board[pos.0 + i*9] {
+                if let Some(p) = self.board.get_board()[pos.0 + i*9] {
                     if p == piece {
                         return Err(BoardErr::PosInvalid);
                     }
@@ -110,9 +166,9 @@ impl Board {
         }
 
         // take because if no piece then it leaves none otherweise remove piece
-        match self.board[pos.0 + pos.1 * 9].take() {
+        match self.board.get_board_mut()[pos.0 + pos.1 * 9].take() {
             Some(p) =>  {
-                self.grid[pos.0/3 + pos.1/3 * 3 + p as usize] = false;
+                self.grid[pos.0/3 + pos.1/3 * 3 + p.value as usize] = false;
                 Ok(())
             },
             None => Err(BoardErr::NoPiece),
@@ -126,13 +182,13 @@ impl std::fmt::Display for Board {
         let mut pos = 0;
         let mut line = 0;
 
-        for piece in &self.board {
+        for piece in self.board.get_board() {
             if pos % 3 == 0 && pos != 0 {
                 pretty_board.push('|');
             }
 
             if let Some(p) = piece {
-                pretty_board.push_str(&p.to_string());
+                pretty_board.push_str(&p.value.to_string());
             } else {
                 pretty_board.push('0');
             }
@@ -171,9 +227,18 @@ mod tests {
         board.place_piece(1, (0, 7)).unwrap();
         assert_eq!(board.place_piece(7, (0, 7)), Err(BoardErr::PosTaken));
 
+        // same row
         let mut board = Board::new();
         board.place_piece(7, (0, 0)).unwrap();
         assert_eq!(board.place_piece(7, (0, 7)), Err(BoardErr::PosInvalid));
+        // same col
+        let mut board = Board::new();
+        board.place_piece(7, (8, 7)).unwrap();
+        assert_eq!(board.place_piece(7, (0, 7)), Err(BoardErr::PosInvalid));
+        // same grid cell
+        let mut board = Board::new();
+        board.place_piece(7, (0, 0)).unwrap();
+        assert_eq!(board.place_piece(7, (1, 1)), Err(BoardErr::PosInvalid));
 
         assert_eq!(Board::new().place_piece(7, (0, 20)), Err(BoardErr::OutOfBounds));
 
