@@ -20,9 +20,6 @@ impl Solver {
     }
 
     fn check_placement(&mut self, pos: Pos) -> State {
-        // println!("{}, {}", pos.0, pos.1);
-        // println!("{}", self.game);
-
         if self.game.is_piece(pos) {
             let (mut x, mut y) = pos;
             x += 1;
