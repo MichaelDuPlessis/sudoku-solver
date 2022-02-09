@@ -1,4 +1,4 @@
-use crate::board::{Board, Pos, State};
+use super::{Pos, State, board::Board};
 
 pub struct Solver {
     game: Board,

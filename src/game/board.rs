@@ -1,31 +1,12 @@
+use super::{PlaceResult, BoardErr, Pos, CheckResult, State};
+
 // constants
 const BOARD_SIZE: usize = 81;
-
-// enums
-#[derive(Debug, PartialEq, Eq)]
-pub enum BoardErr {
-    PosInvalid, // breaks rules
-    PosTaken, // already a piece
-    NoPiece, // no piece to remove
-    OutOfBounds, // bounds violated
-    InvalidPiece, // if piece is invalid
-}
-
-#[derive(Debug, PartialEq, Eq)]
-pub enum State {
-    Win,
-    NoWin,
-}
-
-// types
-pub type Pos = (usize, usize);
-type PlaceResult = Result<State, BoardErr>;
-type CheckResult = Result<(), BoardErr>;
 
 pub struct Board {
     board: [Option<u8>; BOARD_SIZE],
     grid: [bool; BOARD_SIZE],
-    piece_count: u8,
+    piece_count: u8, // u8 because size should never exceed 81
 }
 
 impl Board {
