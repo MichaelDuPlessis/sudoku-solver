@@ -120,7 +120,6 @@ impl Board {
     fn check_placement(&self, piece: u8, pos: Pos) -> CheckResult { // returns InvalidPlaceErr::PosInvalid
         // same grid cell
         if self.grid[(pos.0/3 + pos.1/3 * 3) * 9 + (piece - 1) as usize] {
-            // println!("got here {},{}", pos.0, pos.1);
             return Err(BoardErr::PosInvalid);
         }
 

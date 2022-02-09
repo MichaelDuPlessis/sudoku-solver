@@ -35,8 +35,6 @@ impl Solver {
         }
 
         for p in 1..10 as u8 {
-            // println!("Piece: {}", p);
-
             match self.game.place_piece(p, pos) {
                 Ok(s) => {
                     if s == State::Win {
