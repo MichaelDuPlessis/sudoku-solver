@@ -3,7 +3,7 @@ pub mod solver;
 
 // enums
 #[derive(Debug, PartialEq, Eq)]
-enum BoardErr {
+pub enum BoardErr {
     PosInvalid, // breaks rules
     PosTaken, // already a piece
     NoPiece, // no piece to remove
@@ -12,7 +12,7 @@ enum BoardErr {
 }
 
 #[derive(Debug, PartialEq, Eq)]
-enum State {
+pub enum State {
     Win,
     NoWin,
 }
