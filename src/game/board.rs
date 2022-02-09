@@ -19,60 +19,6 @@ impl Board {
         }
     }
 
-    // add code to check if board is valid
-    #[allow(dead_code)]
-    pub fn from_array(board: [Option<u8>; BOARD_SIZE]) -> Self {
-        let mut grid = [false; BOARD_SIZE];
-
-        // change code to be more effiecient with modulus
-        let mut x = 0;
-        let mut y = 0;
-        for piece in board {
-            if let Some(p) = piece {
-                grid[(x/3 + y/3 * 3) * 9 + (p as usize) - 1] = true;
-            }
-
-            x += 1;
-            if x == 9 {
-                x = 0;
-                y += 1;
-            }
-        }
-
-        Self {
-            board,
-            grid,
-            piece_count: board.iter().filter(|p| { // create new data structure where None's are filtered out and count it
-                **p != None
-            }).count() as u8,
-        }
-    }
-
-    #[allow(dead_code)]
-    pub fn from_string(board: &str) -> Self {
-        let mut b = [None; BOARD_SIZE];
-
-        let mut i = 0;
-        for p in board.as_bytes() {
-            match p {
-              b'1' => b[i] = Some(1),
-              b'2' => b[i] = Some(2),
-              b'3' => b[i] = Some(3),
-              b'4' => b[i] = Some(4),
-              b'5' => b[i] = Some(5),
-              b'6' => b[i] = Some(6),
-              b'7' => b[i] = Some(7),
-              b'8' => b[i] = Some(8),
-              b'9' => b[i] = Some(9),
-              _ => (),
-            };
-
-            i += 1;
-        }
-
-        Self::from_array(b)
-    }
-
     pub fn place_piece(&mut self, piece: u8, pos: Pos) -> PlaceResult {
         // check if bounds are satified
         if pos.0 > 8 || pos.1 > 8 { // since pos must be of type (usize, usize) no need to check if < 0
@@ -151,6 +97,61 @@ impl Board {
         }
 
         true
+    }
+}
+
+impl From<[Option<u8>; 81]> for Board {
+    fn from(board: [Option<u8>; 81]) -> Self {
+        let mut grid = [false; BOARD_SIZE];
+
+        // change code to be more effiecient with modulus
+        let mut x = 0;
+        let mut y = 0;
+        for piece in board {
+            if let Some(p) = piece {
+                grid[(x/3 + y/3 * 3) * 9 + (p as usize) - 1] = true;
+            }
+
+            x += 1;
+            if x == 9 {
+                x = 0;
+                y += 1;
+            }
+        }
+
+        Self {
+            board,
+            grid,
+            piece_count: board.iter().filter(|p| { // create new data structure where None's are filtered out and count it
+                **p != None
+            }).count() as u8,
+        }
+    }
+}
+
+impl From<&str> for Board {
+    fn from(board: &str) -> Self {
+        let mut b = [None; BOARD_SIZE];
+
+        let mut i = 0;
+        for p in board.as_bytes() {
+            match p {
+              b'1' => b[i] = Some(1),
+              b'2' => b[i] = Some(2),
+              b'3' => b[i] = Some(3),
+              b'4' => b[i] = Some(4),
+              b'5' => b[i] = Some(5),
+              b'6' => b[i] = Some(6),
+              b'7' => b[i] = Some(7),
+              b'8' => b[i] = Some(8),
+              b'9' => b[i] = Some(9),
+              _ => (),
+            };
+
+            i += 1;
+        }
+
+        Self::from(b)
     }
 }
 
