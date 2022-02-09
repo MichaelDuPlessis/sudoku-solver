@@ -1,7 +1,8 @@
 mod game;
+use game::{solver::Solver, board::Board};
 
 fn main() {
-    let board = "003020600900305001001806400008102900700000008006708200002609500800203009005010300";
-    let mut solver = game::solver::Solver::new(game::board::Board::from_string(board));
+    let board = "000002000080000007006310900060250080000004500002009000100000090000040000003560100";
+    let mut solver = Solver::new(Board::from_string(board));
     println!("{}", solver.solve().unwrap());
 }

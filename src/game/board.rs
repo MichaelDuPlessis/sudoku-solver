@@ -10,6 +10,7 @@ pub struct Board {
 }
 
 impl Board {
+    #[allow(dead_code)]
     pub fn new() -> Self {
         Self {
             board: [None; BOARD_SIZE],
@@ -19,7 +20,7 @@ impl Board {
     }
 
     // add code to check if board is valid
-    // make it so gird does not need to be past in
+    #[allow(dead_code)]
     pub fn from_array(board: [Option<u8>; BOARD_SIZE]) -> Self {
         let mut grid = [false; BOARD_SIZE];
 
@@ -47,6 +48,7 @@ impl Board {
         }
     }
 
+    #[allow(dead_code)]
     pub fn from_string(board: &str) -> Self {
         let mut b = [None; BOARD_SIZE];
 
