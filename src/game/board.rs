@@ -100,8 +100,8 @@ impl Board {
     }
 }
 
-impl From<[Option<u8>; 81]> for Board {
-    fn from(board: [Option<u8>; 81]) -> Self {
+impl From<&[Option<u8>; 81]> for Board {
+    fn from(board: &[Option<u8>; 81]) -> Self {
         let mut grid = [false; BOARD_SIZE];
 
         // change code to be more effiecient with modulus
@@ -109,7 +109,7 @@ impl From<[Option<u8>; 81]> for Board {
         let mut y = 0;
         for piece in board {
             if let Some(p) = piece {
-                grid[(x/3 + y/3 * 3) * 9 + (p as usize) - 1] = true;
+                grid[(x/3 + y/3 * 3) * 9 + (*p as usize) - 1] = true;
             }
 
             x += 1;
@@ -120,7 +120,7 @@ impl From<[Option<u8>; 81]> for Board {
         }
 
         Self {
-            board,
+            board: *board, // maybe change so that Board holds a &[Option<u8>; 81]
             grid,
             piece_count: board.iter().filter(|p| { // create new data structure where None's are filtered out and count it
                 **p != None
@@ -151,7 +151,7 @@ impl From<&str> for Board {
             i += 1;
         }
 
-        Self::from(b)
+        Self::from(&b)
     }
 }
 
