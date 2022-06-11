@@ -1,19 +1,21 @@
+use std::{ops::Index, array::{IntoIter, self}};
+
 use super::{PlaceResult, BoardErr, Pos, CheckResult, State};
 
 // constants
 const BOARD_SIZE: usize = 81;
 
-pub struct Board {
-    board: [Option<u8>; BOARD_SIZE],
+pub struct Game {
+    board: Board,
     grid: [bool; BOARD_SIZE],
     piece_count: u8, // u8 because size should never exceed 81
 }
 
-impl Board {
+impl Game {
     #[allow(dead_code)]
     pub fn new() -> Self {
         Self {
-            board: [None; BOARD_SIZE],
+            board: Board::new(),
             grid: [false; BOARD_SIZE],
             piece_count: 0,
         }
@@ -100,7 +102,7 @@ impl Board {
     }
 }
 
-impl From<&[Option<u8>; 81]> for Board {
+impl From<&[Option<u8>; 81]> for Game {
     fn from(board: &[Option<u8>; 81]) -> Self {
         let mut grid = [false; BOARD_SIZE];
 
@@ -120,7 +122,7 @@ impl From<&[Option<u8>; 81]> for Board {
         }
 
         Self {
-            board: *board, // maybe change so that Board holds a &[Option<u8>; 81]
+            board: Board::from(board), // maybe change so that Board holds a &[Option<u8>; 81]
             grid,
             piece_count: board.iter().filter(|p| { // create new data structure where None's are filtered out and count it
                 **p != None
@@ -129,39 +131,32 @@ impl From<&[Option<u8>; 81]> for Board {
     }
 }
 
-impl From<&str> for Board {
+impl From<&str> for Game {
     fn from(board: &str) -> Self {
-        let mut b = [None; BOARD_SIZE];
-
-        let mut i = 0;
-        for p in board.as_bytes() {
+        Self::from(&board.as_bytes().iter().map(|p| {
             match p {
-              b'1' => b[i] = Some(1),
-              b'2' => b[i] = Some(2),
-              b'3' => b[i] = Some(3),
-              b'4' => b[i] = Some(4),
-              b'5' => b[i] = Some(5),
-              b'6' => b[i] = Some(6),
-              b'7' => b[i] = Some(7),
-              b'8' => b[i] = Some(8),
-              b'9' => b[i] = Some(9),
-              _ => (),
-            };
-
-            i += 1;
-        }
-
-        Self::from(&b)
+                b'1' => Some(1 as u8),
+                b'2' => Some(2),
+                b'3' => Some(3),
+                b'4' => Some(4),
+                b'5' => Some(5),
+                b'6' => Some(6),
+                b'7' => Some(7),
+                b'8' => Some(8),
+                b'9' => Some(9),
+                _ => None,
+              }
+        }).collect::<Board>())
     }
 }
 
-impl std::fmt::Display for Board {
+impl std::fmt::Display for Game {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let mut pretty_board = String::new();
         let mut pos = 0;
         let mut line = 0;
 
-        for piece in &self.board {
+        for piece in self.board {
             if pos % 3 == 0 && pos != 0 {
                 pretty_board.push('|');
             }
@@ -188,6 +183,55 @@ impl std::fmt::Display for Board {
     }
 }
 
+struct Board {
+    board: [Option<u8>; BOARD_SIZE]
+}
+
+impl Board {
+    fn new() -> Self {
+        Self {
+            board: [None; BOARD_SIZE]
+        }
+    }
+}
+
+impl FromIterator<Option<u8>> for Board {
+    fn from_iter<T: IntoIterator<Item = Option<u8>>>(iter: T) -> Self {
+        let board = Board::new();
+
+        for (i, b) in iter.into_iter().enumerate() {
+            board[i] = b;
+        }
+
+        board
+    }
+}
+
+impl IntoIterator for Board {
+    type Item = Option<u8>;
+    type IntoIter = array::IntoIter<Self::Item, BOARD_SIZE>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.board.into_iter()
+    }
+}
+
+impl From<&[Option<u8>; BOARD_SIZE]> for Board {
+    fn from(board: &[Option<u8>; BOARD_SIZE]) -> Self {
+        Self {
+            board: *board
+        }
+    }
+}
+
+impl Index<usize> for Board {
+    type Output = Option<u8>;
+
+    fn index(&self, index: usize) -> &Self::Output {
+        &self.board[index]
+    }
+}
+
 // unwrap is used because I know that there will always be an Ok()
 #[cfg(test)]
 mod tests {
@@ -195,43 +239,43 @@ mod tests {
 
     #[test]
     fn valid_place_test() {
-        assert_eq!(Board::new().place_piece(7, (0, 7)), Ok(State::NoWin));
+        assert_eq!(Game::new().place_piece(7, (0, 7)), Ok(State::NoWin));
 
         // add code to test for win
     }
 
     #[test]
     fn invalid_place_test() {
-        let mut board = Board::new();
+        let mut board = Game::new();
         board.place_piece(1, (0, 7)).unwrap();
         assert_eq!(board.place_piece(7, (0, 7)), Err(BoardErr::PosTaken));
 
-        let mut board = Board::new();
+        let mut board = Game::new();
         board.place_piece(7, (0, 0)).unwrap();
         assert_eq!(board.place_piece(7, (0, 7)), Err(BoardErr::PosInvalid));
 
-        assert_eq!(Board::new().place_piece(7, (0, 20)), Err(BoardErr::OutOfBounds));
+        assert_eq!(Game::new().place_piece(7, (0, 20)), Err(BoardErr::OutOfBounds));
 
-        assert_eq!(Board::new().place_piece(20, (0, 0)), Err(BoardErr::InvalidPiece));
+        assert_eq!(Game::new().place_piece(20, (0, 0)), Err(BoardErr::InvalidPiece));
     }
 
     #[test]
     fn valid_remove_test() {
-        let mut board = Board::new();
+        let mut board = Game::new();
         board.place_piece(1, (0, 7)).unwrap();
         assert_eq!(board.remove_piece((0,7)), Ok(()))
     }
 
     #[test]
     fn invalid_remove_test() {
-        let mut board = Board::new();
+        let mut board = Game::new();
         board.place_piece(1, (0, 7)).unwrap();
         assert_eq!(board.remove_piece((0,6)), Err(BoardErr::NoPiece));
     }
 
     #[test]
     fn check_grid() {
-        let mut board = Board::new();
+        let mut board = Game::new();
         board.place_piece(1, (0, 0)).unwrap();
         board.place_piece(2, (1, 0)).unwrap();
         board.place_piece(3, (2, 0)).unwrap();
